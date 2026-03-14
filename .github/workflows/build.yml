@@ -1,0 +1,274 @@
+name: Build ScpGUI
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-windows:
+    name: 🪟 Windows Build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller ScpGUI.spec --clean --noconfirm
+
+      - name: Rename artifact
+        run: |
+          mv dist/ScpGUI.exe dist/ScpGUI-Windows-x64.exe
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScpGUI-Windows-x64
+          path: dist/ScpGUI-Windows-x64.exe
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-macos-intel:
+    name: 🍎 macOS Intel Build
+    runs-on: macos-13       # Intel runner
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller ScpGUI.spec --clean --noconfirm
+
+      - name: Package macOS app
+        run: |
+          cd dist
+          if [ -d "ScpGUI.app" ]; then
+            zip -r ScpGUI-macOS-Intel.zip ScpGUI.app
+          else
+            zip -r ScpGUI-macOS-Intel.zip ScpGUI
+          fi
+
+      - name: Upload macOS Intel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScpGUI-macOS-Intel
+          path: dist/ScpGUI-macOS-Intel.zip
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-macos-arm:
+    name: 🍎 macOS Apple Silicon Build
+    runs-on: macos-14       # ARM M1/M2 runner
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller ScpGUI.spec --clean --noconfirm
+
+      - name: Package macOS app
+        run: |
+          cd dist
+          if [ -d "ScpGUI.app" ]; then
+            zip -r ScpGUI-macOS-AppleSilicon.zip ScpGUI.app
+          else
+            zip -r ScpGUI-macOS-AppleSilicon.zip ScpGUI
+          fi
+
+      - name: Upload macOS Apple Silicon artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScpGUI-macOS-AppleSilicon
+          path: dist/ScpGUI-macOS-AppleSilicon.zip
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-linux:
+    name: 🐧 Linux Build
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-tk \
+            libglib2.0-0 \
+            libxkbcommon-x11-0 \
+            libdbus-1-3 \
+            libxcb-icccm4 \
+            libxcb-image0 \
+            libxcb-keysyms1 \
+            libxcb-randr0 \
+            libxcb-render-util0 \
+            libxcb-xinerama0 \
+            libxcb-xfixes0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller ScpGUI.spec --clean --noconfirm
+
+      - name: Package Linux binary
+        run: |
+          cd dist
+          tar -czvf ScpGUI-Linux-x64.tar.gz ScpGUI
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScpGUI-Linux-x64
+          path: dist/ScpGUI-Linux-x64.tar.gz
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-linux-arm:
+    name: 🐧 Linux ARM Build
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU for ARM emulation
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Build in ARM Docker container
+        uses: addnab/docker-run-action@v3
+        with:
+          image: python:3.12-slim-bookworm
+          options: --platform linux/arm64 -v ${{ github.workspace }}:/workspace -w /workspace
+          run: |
+            apt-get update
+            apt-get install -y \
+              python3-tk \
+              tk-dev \
+              libglib2.0-0 \
+              binutils \
+              upx-ucl
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install pyinstaller
+            pyinstaller ScpGUI.spec --clean --noconfirm
+            cd dist && tar -czvf ScpGUI-Linux-arm64.tar.gz ScpGUI
+
+      - name: Upload Linux ARM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScpGUI-Linux-arm64
+          path: dist/ScpGUI-Linux-arm64.tar.gz
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  create-release:
+    name: 🚀 Create GitHub Release
+    needs: [build-windows, build-macos-intel, build-macos-arm, build-linux, build-linux-arm]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: List artifacts
+        run: find release-assets -type f | sort
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ScpGUI ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            release-assets/ScpGUI-Windows-x64/ScpGUI-Windows-x64.exe
+            release-assets/ScpGUI-macOS-Intel/ScpGUI-macOS-Intel.zip
+            release-assets/ScpGUI-macOS-AppleSilicon/ScpGUI-macOS-AppleSilicon.zip
+            release-assets/ScpGUI-Linux-x64/ScpGUI-Linux-x64.tar.gz
+            release-assets/ScpGUI-Linux-arm64/ScpGUI-Linux-arm64.tar.gz
+          body: |
+            ## ScpGUI ${{ github.ref_name }}
+
+            A WinSCP-like SFTP/SCP file transfer client built with Python and Tkinter.
+
+            ### Downloads
+
+            | Platform | Architecture | Download |
+            |----------|-------------|----------|
+            | Windows  | x64         | `ScpGUI-Windows-x64.exe` |
+            | macOS    | Intel       | `ScpGUI-macOS-Intel.zip` |
+            | macOS    | Apple Silicon | `ScpGUI-macOS-AppleSilicon.zip` |
+            | Linux    | x64         | `ScpGUI-Linux-x64.tar.gz` |
+            | Linux    | ARM64       | `ScpGUI-Linux-arm64.tar.gz` |
+
+            ### Requirements
+            - No Python installation needed — standalone executables
+            - macOS: Right-click → Open on first launch (unsigned app)
+            - Linux: `chmod +x ScpGUI && ./ScpGUI`
