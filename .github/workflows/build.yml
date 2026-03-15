@@ -10,8 +10,8 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-permissions:
-  contents: write
+# Set default permissions to read-only for security (OSSF Score: Token-Permissions)
+permissions: read-all
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
@@ -21,10 +21,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.3.0
         with:
           python-version: "3.12"
           cache: pip
@@ -44,7 +44,7 @@ jobs:
           mv dist/ScpGUI.exe dist/ScpGUI-Windows-x64.exe
 
       - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65c86b38a5b44210b1d75048f91f9266505d0f40 # v4.6.0
         with:
           name: ScpGUI-Windows-x64
           path: dist/ScpGUI-Windows-x64.exe
@@ -57,10 +57,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.3.0
         with:
           python-version: "3.12"
           cache: pip
@@ -85,7 +85,7 @@ jobs:
           fi
 
       - name: Upload macOS Intel artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65c86b38a5b44210b1d75048f91f9266505d0f40 # v4.6.0
         with:
           name: ScpGUI-macOS-Intel
           path: dist/ScpGUI-macOS-Intel.zip
@@ -98,10 +98,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.3.0
         with:
           python-version: "3.12"
           cache: pip
@@ -126,7 +126,7 @@ jobs:
           fi
 
       - name: Upload macOS Apple Silicon artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65c86b38a5b44210b1d75048f91f9266505d0f40 # v4.6.0
         with:
           name: ScpGUI-macOS-AppleSilicon
           path: dist/ScpGUI-macOS-AppleSilicon.zip
@@ -139,7 +139,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install system dependencies
         run: |
@@ -159,7 +159,7 @@ jobs:
             libxcb-xfixes0
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.3.0
         with:
           python-version: "3.12"
           cache: pip
@@ -179,7 +179,7 @@ jobs:
           cd dist && tar -czvf ScpGUI-Linux-x64.tar.gz ScpGUI
 
       - name: Upload Linux x64 artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65c86b38a5b44210b1d75048f91f9266505d0f40 # v4.6.0
         with:
           name: ScpGUI-Linux-x64
           path: dist/ScpGUI-Linux-x64.tar.gz
@@ -193,7 +193,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install system dependencies
         run: |
@@ -213,7 +213,7 @@ jobs:
             libxcb-xfixes0
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.3.0
         with:
           python-version: "3.12"
           cache: pip
@@ -233,7 +233,7 @@ jobs:
           cd dist && tar -czvf ScpGUI-Linux-arm64.tar.gz ScpGUI
 
       - name: Upload Linux ARM64 artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65c86b38a5b44210b1d75048f91f9266505d0f40 # v4.6.0
         with:
           name: ScpGUI-Linux-arm64
           path: dist/ScpGUI-Linux-arm64.tar.gz
@@ -245,10 +245,12 @@ jobs:
     needs: [build-windows, build-macos-intel, build-macos-arm, build-linux, build-linux-arm]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write # Elevate for release creation
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e00597137296ea7106 # v4.1.8
         with:
           path: release-assets
 
@@ -256,7 +258,7 @@ jobs:
         run: find release-assets -type f | sort
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@a06a81a6235758783a2f10115dd89e60db491124 # v2.5.0
         with:
           name: ScpGUI ${{ github.ref_name }}
           draft: false
