@@ -22,7 +22,7 @@ except ImportError:
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 APP_NAME = "ScpGUI"
-VERSION  = "1.0.0"
+VERSION  = "1.0.2"
 CONFIG_DIR       = Path.home() / ".scpgui"
 BOOKMARKS_FILE   = CONFIG_DIR / "bookmarks.json"
 SETTINGS_FILE    = CONFIG_DIR / "settings.json"

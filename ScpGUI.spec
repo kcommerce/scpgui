@@ -67,8 +67,8 @@ if sys.platform == 'darwin':
         bundle_identifier='com.scpgui.app',
         info_plist={
             'NSHighResolutionCapable': True,
-            'CFBundleShortVersionString': '1.0.0',
-            'CFBundleVersion': '1.0.0',
+            'CFBundleShortVersionString': '1.0.2',
+            'CFBundleVersion': '1.0.2',
             'NSHumanReadableCopyright': 'MIT License',
         },
     )
